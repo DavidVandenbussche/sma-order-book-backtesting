@@ -1,29 +1,36 @@
-import pandas as pd
 from backtesting import Backtest, Strategy
 from backtesting.lib import crossover
+import pandas as pd
 
-def calculate_sma(prices, window):
-    return prices.rolling(window).mean()
+def SMA(values, n):
+    return pd.Series(values).rolling(n).mean()
 
-class SMAStrategy(Strategy):
+class MovingAverageCrossoverStrategy(Strategy):
+    n1 = 50  # Short moving average window
+    n2 = 200  # Long moving average window
+
     def init(self):
-        self.sma20 = self.I(calculate_sma, self.data.Close, 20)
+        # Precompute the two moving averages using SMA
+        self.ma1 = self.I(SMA, self.data.Close, self.n1)
+        self.ma2 = self.I(SMA, self.data.Close, self.n2)
 
     def next(self):
-        # If current price crosses over SMA from below, and not already long, buy
-        if not self.position.is_long and self.data.Close[-1] > self.sma20[-1]:
+        # If short MA crosses above long MA, buy
+        if crossover(self.ma1, self.ma2):
             self.buy()
-
-        # If current price crosses under SMA from above, and not already short, sell
-        elif not self.position.is_short and self.data.Close[-1] < self.sma20[-1]:
+        # Else if short MA crosses below long MA, sell
+        elif crossover(self.ma2, self.ma1):
             self.sell()
 
-# Load Ethereum data past 10 weeks freq of 15m
+# Load Ethereum data
 data = pd.read_csv('hist_data/storage_ETH-USD15m10.csv', index_col='datetime', parse_dates=True)
 data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
 # data = data.interpolate()  # Handle any missing values
 
-bt = Backtest(data, SMAStrategy, cash=10_000, commission=.002)
-output = bt.run()
-print(output)
+# print(data.head())
+
+# Run the backtest
+bt = Backtest(data, MovingAverageCrossoverStrategy, cash=10000, commission=.002)
+stats = bt.run()
+print(stats)
 bt.plot()

@@ -25,6 +25,10 @@ class MovingAverageCrossoverStrategy(Strategy):
 # Load Ethereum data
 data = pd.read_csv('hist_data/storage_ETH-USD15m10.csv', index_col='datetime', parse_dates=True)
 data.columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+
+# if you want to try on the past 5 years comment the precedent lines and uncomment the following:
+# data = pd.read_csv('hist_data/ETH-USD daily feb 2018.csv', index_col='Date', parse_dates=True)
+
 # data = data.interpolate()  # Handle any missing values
 
 # print(data.head())
